@@ -1,8 +1,29 @@
 # PawPal+ Project Reflection
 
 ## 1. System Design
+Core Activities:
+1. Enter basic pet and owner info
+2. Add/edit tasks
+3. Generate daily plan
 
 **a. Initial design**
+Main objects:
+1. Pet_owner: for adding basic owner info
+    attributes: id, name, email
+    methods: login(), perform_task()
+
+2. Pet: for adding basic pet info
+    attributes: id, name, species, age
+    methods: getAge(), getSpecies()
+
+3. Task: for adding, editing, and deleting tasks 
+    attributes: id, status, category
+    methods: add_task(), editTask()
+
+4. Plan generator:
+    attributes: id, date, status
+    methods: create_plan(), list_plan()
+
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
