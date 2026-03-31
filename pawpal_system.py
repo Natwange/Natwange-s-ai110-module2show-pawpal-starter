@@ -64,10 +64,27 @@ class Scheduler:
     def add_task(self, task: Task) -> None:
         """Append a task to the scheduler's task list."""
         self.tasks.append(task)
+    
+    def edit_task(self, task_id: int, description: str = None, frequency: int = None) -> None:
+        """Edit an existing task by its ID."""
+        for task in self.tasks:
+            if task.id == task_id:
+                if description is not None:
+                    task.description = description
+                if frequency is not None:
+                    task.frequency = frequency
+                break
 
     def remove_task(self, task_id: int) -> None:
         """Remove a task from the scheduler by its ID."""
         self.tasks = [t for t in self.tasks if t.id != task_id]
+
+    def perform_task(self, task_id: int) -> None:
+        """Mark a task as completed by its ID."""
+        for task in self.tasks:
+            if task.id == task_id:
+                task.mark_complete()
+                break
 
     def get_tasks_by_status(self, status: str) -> List[Task]:
         """Return all tasks matching the given status."""
@@ -91,39 +108,26 @@ class PetOwner:
     pets: List[Pet] = field(default_factory=list)
     scheduler: Scheduler = None
 
-    def login(self) -> None:
-        """Authenticate the pet owner"""
-        pass
-
     def perform_task(self, task_id: int) -> None:
-        """Mark a task as completed via the scheduler"""
+        """Mark a task as completed through the owner's scheduler."""
         if self.scheduler:
-            for task in self.scheduler.tasks:
-                if task.id == task_id:
-                    task.mark_complete()
-                    break
+            self.scheduler.perform_task(task_id)
 
     def add_task(self, task: Task) -> None:
-        """Add a new task via the scheduler"""
+        """Add a new task through the owner's scheduler."""
         if self.scheduler:
             self.scheduler.add_task(task)
 
     def edit_task(self, task_id: int, description: str = None, frequency: int = None) -> None:
-        """Edit an existing task via the scheduler"""
+        """Edit an existing task through the owner's scheduler."""
         if self.scheduler:
-            for task in self.scheduler.tasks:
-                if task.id == task_id:
-                    if description:
-                        task.description = description
-                    if frequency is not None:
-                        task.frequency = frequency
-                    break
+            self.scheduler.edit_task(task_id, description, frequency)
 
     def remove_task(self, task_id: int) -> None:
-        """Remove a task via the scheduler"""
+        """Remove a task through the owner's scheduler."""
         if self.scheduler:
             self.scheduler.remove_task(task_id)
 
     def get_tasks(self) -> List[Task]:
-        """Get all tasks from the scheduler"""
-        return self.scheduler.tasks if self.scheduler else []
+        """Return all tasks assigned to the owner."""
+        return self.scheduler.list_plan() if self.scheduler else []

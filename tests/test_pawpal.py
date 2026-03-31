@@ -12,7 +12,7 @@ def make_task(id=1, pet_id=1):
 
 
 def make_owner_with_scheduler():
-    owner = PetOwner(id=1, name="Natwange", email="natwange@email.com")
+    owner = PetOwner(id=1, name="Dalitso", email="dalitso@email.com")
     scheduler = Scheduler(id=1, pet_id=1, date=date.today(), status="active")
     owner.scheduler = scheduler
     return owner

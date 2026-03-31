@@ -24,14 +24,22 @@ Main objects:
     attributes: id, date, status
     methods: create_plan(), list_plan()
 
-
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
 **b. Design changes**
+1. Moved add_task() and edit_task() methods from Task class to PetOwner class because an owner should be responsible for adding tasks
+
+2. Added owner_id to Pet class so that a pet can be linked back to its  owner
+
+3. Rename PlanGenerator class to Scheduler as a better naming convention
+
+4. Added pet_id and owner_id to Task class to know who/what a task belongs to
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+
+
 
 ---
 

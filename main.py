@@ -2,7 +2,7 @@ from datetime import date
 from pawpal_system import Pet, Task, Scheduler, PetOwner
 
 # Create owner
-owner = PetOwner(id=1, name="Natwange", email="natwange@email.com")
+owner = PetOwner(id=1, name="Adrian", email="natwange@email.com")
 
 # Create two pets
 pet1 = Pet(id=1, owner_id=1, name="Buddy", species="Dog", age=3)
