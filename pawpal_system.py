@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from datetime import date
-from typing import List
+from datetime import date, time, timedelta, datetime
+from typing import List, Dict, Tuple
+from collections import defaultdict
 
 @dataclass
 class Pet:
@@ -9,7 +10,7 @@ class Pet:
     name: str
     species: str
     age: int
-    
+
     def get_age(self) -> int:
         """Return the pet's age."""
         return self.age
@@ -26,8 +27,9 @@ class Task:
     status: str
     description: str
     frequency: int
-    time: str
-        
+    time: time
+    priority: int = 1
+
     def mark_complete(self) -> None:
         """Set the task status to completed."""
         self.status = "completed"
@@ -48,57 +50,77 @@ class Task:
 @dataclass
 class Scheduler:
     id: int
-    pet_id: int  #suggested fix
     date: date
     status: str
-    tasks: List[Task] = field(default_factory=list)
+    priority: int = 1
+    tasks: Dict[int, Task] = field(default_factory=dict)
 
     def create_plan(self) -> None:
         """Create a new task plan for the pet"""
         self.status = "active"
-    
-    def list_plan(self) -> List[Task]:
-        """Return all tasks in the current plan."""
-        return self.tasks or []
+
+    def generate_plan(self) -> List[Task]:
+        """Return all tasks in the current plan, ordered by time."""
+        return sorted(self.tasks.values(), key=lambda t: t.time)
 
     def add_task(self, task: Task) -> None:
-        """Append a task to the scheduler's task list."""
-        self.tasks.append(task)
-    
+        """Append a task to the scheduler's task list, raising on time conflict."""
+        for existing in self.tasks.values():
+            if existing.pet_id == task.pet_id and existing.time == task.time:
+                raise ValueError(
+                    f"Conflict: '{existing.description}' already scheduled at "
+                    f"{task.time.strftime('%I:%M %p')} for pet {task.pet_id}."
+                )
+        self.tasks[task.id] = task
+
     def edit_task(self, task_id: int, description: str = None, frequency: int = None) -> None:
         """Edit an existing task by its ID."""
-        for task in self.tasks:
-            if task.id == task_id:
-                if description is not None:
-                    task.description = description
-                if frequency is not None:
-                    task.frequency = frequency
-                break
+        task = self.tasks.get(task_id)
+        if task:
+            if description is not None:
+                task.description = description
+            if frequency is not None:
+                task.frequency = frequency
 
     def remove_task(self, task_id: int) -> None:
         """Remove a task from the scheduler by its ID."""
-        self.tasks = [t for t in self.tasks if t.id != task_id]
+        self.tasks.pop(task_id, None)
 
     def perform_task(self, task_id: int) -> None:
         """Mark a task as completed by its ID."""
-        for task in self.tasks:
-            if task.id == task_id:
-                task.mark_complete()
-                break
+        task = self.tasks.get(task_id)
+        if task:
+            task.mark_complete()
+
+    def get_tasks_by_pet(self, pet_id: int) -> List[Task]:
+        """Return all tasks for a specific pet, ordered by time."""
+        return sorted(
+            (t for t in self.tasks.values() if t.pet_id == pet_id),
+            key=lambda t: t.time
+        )
 
     def get_tasks_by_status(self, status: str) -> List[Task]:
         """Return all tasks matching the given status."""
-        return [t for t in self.tasks if t.status == status]
+        return [t for t in self.tasks.values() if t.status == status]
+
+    def generate_recurring_slots(self) -> List[Tuple[time, Task]]:
+        """Expand each task by its frequency, spacing slots evenly across 24 hours.
+        Returns a list of (slot_time, task) tuples sorted chronologically."""
+        slots = []
+        for task in self.tasks.values():
+            interval = timedelta(hours=24 // task.frequency)
+            slot_dt = datetime.combine(self.date, task.time)
+            for _ in range(task.frequency):
+                slots.append((slot_dt.time(), task))
+                slot_dt += interval
+        return sorted(slots, key=lambda s: s[0])
 
     def organize_by_frequency(self) -> dict:
         """Group tasks into a dict keyed by their daily frequency."""
-        organized = {}
-        for task in self.tasks:
-            freq = task.get_frequency()
-            if freq not in organized:
-                organized[freq] = []
-            organized[freq].append(task)
-        return organized
+        organized = defaultdict(list)
+        for task in self.tasks.values():
+            organized[task.frequency].append(task)
+        return dict(organized)
 
 @dataclass
 class PetOwner:
@@ -115,8 +137,9 @@ class PetOwner:
 
     def add_task(self, task: Task) -> None:
         """Add a new task through the owner's scheduler."""
-        if self.scheduler:
-            self.scheduler.add_task(task)
+        if not self.scheduler:
+            raise ValueError("No scheduler assigned to this owner.")
+        self.scheduler.add_task(task)
 
     def edit_task(self, task_id: int, description: str = None, frequency: int = None) -> None:
         """Edit an existing task through the owner's scheduler."""
@@ -130,4 +153,8 @@ class PetOwner:
 
     def get_tasks(self) -> List[Task]:
         """Return all tasks assigned to the owner."""
-        return self.scheduler.list_plan() if self.scheduler else []
+        return self.scheduler.generate_plan() if self.scheduler else []
+
+    def get_tasks_by_pet(self, pet_id: int) -> List[Task]:
+        """Return all tasks for a specific pet."""
+        return self.scheduler.get_tasks_by_pet(pet_id) if self.scheduler else []
